@@ -1,0 +1,22 @@
+name: smoke
+
+topology:
+  defaults:
+    kind: linux
+    image: condonet/lab-node:day01
+    network-mode: none
+
+  nodes:
+    pc1:
+      exec:
+        - ip link set eth1 up
+        - ip address replace 10.60.250.1/30 dev eth1
+
+    pc2:
+      exec:
+        - ip link set eth1 up
+        - ip address replace 10.60.250.2/30 dev eth1
+
+  links:
+    - endpoints: ["pc1:eth1", "pc2:eth1"]
+      mtu: 1500

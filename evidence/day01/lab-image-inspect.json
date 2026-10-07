@@ -1,0 +1,52 @@
+[
+    {
+        "Id": "sha256:d3cc1192d2e527ca063b918d6df1eb594b92509531ebf7f1c0f8bb930a7a25e9",
+        "RepoTags": [
+            "condonet/lab-node:day01"
+        ],
+        "RepoDigests": [
+            "condonet/lab-node@sha256:d3cc1192d2e527ca063b918d6df1eb594b92509531ebf7f1c0f8bb930a7a25e9"
+        ],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-10-07T22:45:27.342837746+07:00",
+        "Config": {
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            ],
+            "Cmd": [
+                "sleep",
+                "infinity"
+            ],
+            "Labels": {
+                "org.opencontainers.image.version": "24.04"
+            },
+            "ArgsEscaped": true
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 133238693,
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:d81fb2a7c6ee3be05fdefaa7fd223be219c1ab172083ec1b994c3ecda33ac0a8",
+                "sha256:552d2ef7985d1ffacef4ee98709185f8934a46916dd0f57ca51409541f618f75"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-10-07T15:45:27.672821971Z"
+        },
+        "Descriptor": {
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "digest": "sha256:d3cc1192d2e527ca063b918d6df1eb594b92509531ebf7f1c0f8bb930a7a25e9",
+            "size": 855
+        },
+        "Identity": {
+            "Build": [
+                {
+                    "Ref": "ug34k0zc83v9211py4clrn3ce",
+                    "CreatedAt": "2026-10-07T22:45:28.180116497+07:00"
+                }
+            ]
+        }
+    }
+]

@@ -1,0 +1,34 @@
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local backups
+*.bak
+*.bak.*
+*~
+
+# Containerlab runtime files
+clab-*/
+
+# Local dependencies and model weights
+node_modules/
+.ollama/
+models/
+*.gguf
+*.safetensors
+
+# VM and disk images
+*.vmdk
+*.vdi
+*.qcow2
+*.iso

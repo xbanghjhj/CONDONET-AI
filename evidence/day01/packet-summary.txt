@@ -1,0 +1,14 @@
+22:59:10.802031 aa:c1:ab:c3:ec:d1 > ff:ff:ff:ff:ff:ff, ethertype ARP (0x0806), length 42: Request who-has 10.60.250.2 tell 10.60.250.1, length 28
+22:59:10.802042 aa:c1:ab:da:c4:63 > aa:c1:ab:c3:ec:d1, ethertype ARP (0x0806), length 42: Reply 10.60.250.2 is-at aa:c1:ab:da:c4:63, length 28
+22:59:10.802046 aa:c1:ab:c3:ec:d1 > aa:c1:ab:da:c4:63, ethertype IPv4 (0x0800), length 98: 10.60.250.1 > 10.60.250.2: ICMP echo request, id 58564, seq 1, length 64
+22:59:10.802053 aa:c1:ab:da:c4:63 > aa:c1:ab:c3:ec:d1, ethertype IPv4 (0x0800), length 98: 10.60.250.2 > 10.60.250.1: ICMP echo reply, id 58564, seq 1, length 64
+22:59:11.837145 aa:c1:ab:c3:ec:d1 > aa:c1:ab:da:c4:63, ethertype IPv4 (0x0800), length 98: 10.60.250.1 > 10.60.250.2: ICMP echo request, id 58564, seq 2, length 64
+22:59:11.837161 aa:c1:ab:da:c4:63 > aa:c1:ab:c3:ec:d1, ethertype IPv4 (0x0800), length 98: 10.60.250.2 > 10.60.250.1: ICMP echo reply, id 58564, seq 2, length 64
+22:59:12.861076 aa:c1:ab:c3:ec:d1 > aa:c1:ab:da:c4:63, ethertype IPv4 (0x0800), length 98: 10.60.250.1 > 10.60.250.2: ICMP echo request, id 58564, seq 3, length 64
+22:59:12.861090 aa:c1:ab:da:c4:63 > aa:c1:ab:c3:ec:d1, ethertype IPv4 (0x0800), length 98: 10.60.250.2 > 10.60.250.1: ICMP echo reply, id 58564, seq 3, length 64
+22:59:13.885113 aa:c1:ab:c3:ec:d1 > aa:c1:ab:da:c4:63, ethertype IPv4 (0x0800), length 98: 10.60.250.1 > 10.60.250.2: ICMP echo request, id 58564, seq 4, length 64
+22:59:13.885127 aa:c1:ab:da:c4:63 > aa:c1:ab:c3:ec:d1, ethertype IPv4 (0x0800), length 98: 10.60.250.2 > 10.60.250.1: ICMP echo reply, id 58564, seq 4, length 64
+22:59:14.910092 aa:c1:ab:c3:ec:d1 > aa:c1:ab:da:c4:63, ethertype IPv4 (0x0800), length 98: 10.60.250.1 > 10.60.250.2: ICMP echo request, id 58564, seq 5, length 64
+22:59:14.910105 aa:c1:ab:da:c4:63 > aa:c1:ab:c3:ec:d1, ethertype IPv4 (0x0800), length 98: 10.60.250.2 > 10.60.250.1: ICMP echo reply, id 58564, seq 5, length 64
+22:59:16.062056 aa:c1:ab:da:c4:63 > aa:c1:ab:c3:ec:d1, ethertype ARP (0x0806), length 42: Request who-has 10.60.250.1 tell 10.60.250.2, length 28
+22:59:16.062061 aa:c1:ab:c3:ec:d1 > aa:c1:ab:da:c4:63, ethertype ARP (0x0806), length 42: Reply 10.60.250.1 is-at aa:c1:ab:c3:ec:d1, length 28

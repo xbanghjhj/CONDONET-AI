@@ -1,0 +1,9 @@
+{
+  "data_source": "synthetic",
+  "diagnosis": "suspected_dns_error",
+  "evidence_ids": [
+    "E01",
+    "E02"
+  ],
+  "requires_human": true
+}

@@ -1,0 +1,61 @@
+{
+  "model": "qwen3.5:2b",
+  "stream": false,
+  "think": false,
+  "keep_alive": "10m",
+  "options": {
+    "temperature": 0,
+    "num_ctx": 4096,
+    "num_predict": 256
+  },
+  "format": {
+    "type": "object",
+    "properties": {
+      "data_source": {
+        "type": "string",
+        "enum": [
+          "synthetic"
+        ]
+      },
+      "diagnosis": {
+        "type": "string",
+        "enum": [
+          "suspected_dns_error",
+          "unknown"
+        ]
+      },
+      "evidence_ids": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "E01",
+            "E02"
+          ]
+        },
+        "minItems": 1,
+        "uniqueItems": true
+      },
+      "requires_human": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "data_source",
+      "diagnosis",
+      "evidence_ids",
+      "requires_human"
+    ],
+    "additionalProperties": false
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "Analyze supplied synthetic evidence only. Do not claim real probes or repairs. Return JSON and set requires_human=true. Schema: {\"type\": \"object\", \"properties\": {\"data_source\": {\"type\": \"string\", \"enum\": [\"synthetic\"]}, \"diagnosis\": {\"type\": \"string\", \"enum\": [\"suspected_dns_error\", \"unknown\"]}, \"evidence_ids\": {\"type\": \"array\", \"items\": {\"type\": \"string\", \"enum\": [\"E01\", \"E02\"]}, \"minItems\": 1, \"uniqueItems\": true}, \"requires_human\": {\"type\": \"boolean\"}}, \"required\": [\"data_source\", \"diagnosis\", \"evidence_ids\", \"requires_human\"], \"additionalProperties\": false}"
+    },
+    {
+      "role": "user",
+      "content": "SYNTHETIC TEST, not live network evidence. Expected portal.condo.test IP: 10.60.50.10. E01: DNS returned 10.60.50.99. E02: HTTP to 10.60.50.10 returned status 200. Identify the likely fault and cite evidence IDs."
+    }
+  ]
+}

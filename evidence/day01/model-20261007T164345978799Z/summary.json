@@ -1,0 +1,11 @@
+{
+  "model": "qwen3.5:2b",
+  "digest": "0689d44085e06d165161a8a9a1731344278cfb5aade63a3c3dbdb48ab54b130a",
+  "context": 4096,
+  "attempted_runs": 4,
+  "ok_runs": 4,
+  "warm_ok_runs": 3,
+  "warm_median_s": 3.263,
+  "warm_max_s": 3.285,
+  "all_four_ok": true
+}
