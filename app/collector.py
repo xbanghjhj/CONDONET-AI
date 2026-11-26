@@ -9,6 +9,7 @@ from threading import Event, Lock, Thread
 from time import monotonic
 from uuid import uuid4
 
+from app.incident_store import IncidentStore
 from app.metrics import METRICS_ADDRESS, MetricsServer
 from runner.read_tools import MONITORED_PROBES, ProbeResult, ReadOnlyRunner
 
@@ -27,13 +28,16 @@ class Incident:
 
 
 class JsonlEvidence:
-    def __init__(self, output):
+    def __init__(self, output, store=None):
         output.mkdir(parents=True, exist_ok=False)
         self.output = output
+        self.store = store
 
     def __call__(self, stream, record):
         with (self.output / f"{stream}.jsonl").open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(record) + "\n")
+        if self.store is not None:
+            self.store.record_collector(stream, record)
 
 
 class Collector:
@@ -132,38 +136,43 @@ class Collector:
             stop.wait(deadline - now)
 
 
+def collect(args, store=None):
+    runner = ReadOnlyRunner(args.lab)
+    collector = Collector(runner, JsonlEvidence(args.out_dir, store))
+    if args.once:
+        collector.poll()
+        return
+
+    stop = Event()
+    signal.signal(signal.SIGTERM, lambda *_: stop.set())
+    signal.signal(signal.SIGINT, lambda *_: stop.set())
+    with MetricsServer(collector, STALE_AFTER) as server:
+        worker = Thread(target=server.serve_forever, daemon=True)
+        worker.start()
+        try:
+            address, port = METRICS_ADDRESS
+            print(f"Collecting {args.lab} every {SAMPLE_INTERVAL}s into {args.out_dir}. "
+                  f"Metrics at http://{address}:{port}/metrics", flush=True)
+            collector.run(stop)
+        finally:
+            server.shutdown()
+            worker.join()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Collect read-only CondoNet lab probes.")
     parser.add_argument("--lab", required=True)
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--once", action="store_true")
+    parser.add_argument("--incident-db", type=Path)
     args = parser.parse_args()
     try:
-        runner = ReadOnlyRunner(args.lab)
-        collector = Collector(runner, JsonlEvidence(args.out_dir))
+        if args.incident_db:
+            with IncidentStore(args.incident_db) as store:
+                collect(args, store)
+        else:
+            collect(args)
     except (ValueError, OSError) as error:
-        parser.error(str(error))
-
-    if args.once:
-        collector.poll()
-        return 0
-
-    stop = Event()
-    signal.signal(signal.SIGTERM, lambda *_: stop.set())
-    signal.signal(signal.SIGINT, lambda *_: stop.set())
-    try:
-        with MetricsServer(collector, STALE_AFTER) as server:
-            worker = Thread(target=server.serve_forever, daemon=True)
-            worker.start()
-            try:
-                address, port = METRICS_ADDRESS
-                print(f"Collecting {args.lab} every {SAMPLE_INTERVAL}s into {args.out_dir}. "
-                      f"Metrics at http://{address}:{port}/metrics", flush=True)
-                collector.run(stop)
-            finally:
-                server.shutdown()
-                worker.join()
-    except OSError as error:
         parser.error(str(error))
     return 0
 

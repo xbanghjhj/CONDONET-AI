@@ -1,0 +1,3 @@
+alert tcp 10.60.20.0/24 any -> 10.60.50.10 80 (msg:"CondoNet resident portal flow marker"; vlan.id:20; flags:S; flowbits:set,condonet_resident_portal; flowbits:noalert; sid:1000003; rev:1;)
+alert http 10.60.20.0/24 any -> 10.60.50.10 80 (msg:"CondoNet lab URI test"; flow:established,to_server; flowbits:isset,condonet_resident_portal; http.uri; content:"/lab-alert"; bsize:10; sid:1000001; rev:2;)
+alert tcp 10.60.10.10 any -> 10.60.50.10 80 (msg:"CondoNet lab portal SYN threshold test"; vlan.id:10; flags:S; threshold:type threshold, track by_src, count 3, seconds 3; sid:1000002; rev:1;)

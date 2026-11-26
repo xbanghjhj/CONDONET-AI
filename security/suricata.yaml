@@ -1,0 +1,47 @@
+%YAML 1.1
+---
+default-log-dir: /var/log/suricata
+default-rule-path: /etc/condonet-ids
+classification-file: /dev/null
+reference-config-file: /dev/null
+threshold-file: /dev/null
+rule-files:
+  - local.rules
+
+af-packet:
+  - interface: eth1
+    threads: 1
+    cluster-id: 51
+    cluster-type: cluster_flow
+    defrag: yes
+    disable-promisc: yes
+    checksum-checks: no
+
+vlan:
+  use-for-tracking: true
+
+stream:
+  inline: no
+  checksum-validation: no
+
+app-layer:
+  protocols:
+    http:
+      enabled: yes
+
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: eve.json
+      types:
+        - alert
+        - http:
+            extended: yes
+        - flow
+
+unix-command:
+  enabled: no
+
+stats:
+  enabled: no
