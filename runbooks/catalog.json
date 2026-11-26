@@ -1,0 +1,74 @@
+[
+  {
+    "id": "RB01",
+    "version": "1.0.0",
+    "title": "Restore lab DNS",
+    "hypothesis": "dns_failure",
+    "target": "svc",
+    "keywords": "dns dns_failure dns_answer_mismatch dns_unreachable resolver dig port 53 SERVFAIL",
+    "preconditions": "DNS to svc fails or returns a wrong A record while HTTP to the portal IP succeeds.",
+    "proposal": "Ask the operator to compare svc dnsmasq with the known-good DNS configuration and validate syntax before restoring the configuration or restarting the DNS process.",
+    "verify": "Verify the lab A records over UDP and TCP and verify the portal by name.",
+    "rollback": "Preserve the configuration snapshot and verify the DNS state after rollback."
+  },
+  {
+    "id": "RB02",
+    "version": "1.0.0",
+    "title": "Restore the portal",
+    "hypothesis": "web_down",
+    "target": "svc",
+    "keywords": "web_down portal web nginx http tcp connection_failure http_status http_body_mismatch",
+    "preconditions": "The portal DNS answer is correct and direct HTTP to the portal IP fails.",
+    "proposal": "Ask the operator to check Nginx supervisor state and syntax, then restore the known-good site configuration or start the portal service if it is stopped.",
+    "verify": "Verify the expected portal body with HTTP 200 and check guest WAN and DNS canaries.",
+    "rollback": "Restore the pre-change snapshot when applicable and distinguish rollback from service recovery."
+  },
+  {
+    "id": "RB03",
+    "version": "1.0.0",
+    "title": "Review temporary lab quarantine",
+    "hypothesis": "ids_test",
+    "target": "source",
+    "keywords": "ids_test lab_alert_uri lab_syn_threshold suricata eve alert quarantine security evidence review",
+    "preconditions": "A validated IDS event identifies the lab source IP, node, flow and destination. The operator reviews the intended scope and test classification.",
+    "proposal": "Propose a temporary 120-second quarantine for the verified lab source, subject to separate operator approval.",
+    "verify": "Confirm the source is blocked, an unaffected canary works and the entry expires.",
+    "rollback": "An authorized operator can remove that exact quarantine element and retest."
+  },
+  {
+    "id": "RB04",
+    "version": "1.0.0",
+    "title": "Investigate gateway or VLAN connectivity",
+    "hypothesis": "gateway_unreachable",
+    "target": "source",
+    "keywords": "gateway_unreachable gateway vlan network route link down icmp_unreachable interface pvid",
+    "preconditions": "The source cannot reach its gateway and interface or route evidence is available.",
+    "proposal": "Compare the source interface, default route and switch access VLAN with the known-good topology. Escalate the discrepancy for operator review.",
+    "verify": "Confirm gateway reachability followed by a service probe and a canary.",
+    "rollback": "Keep the observed network state and hand off any proposed change."
+  },
+  {
+    "id": "RB05",
+    "version": "1.0.0",
+    "title": "Investigate DHCP address acquisition",
+    "hypothesis": "dhcp_failure",
+    "target": "source",
+    "keywords": "dhcp_failure dhcp lease dora discover offer request ack resident guest no address",
+    "preconditions": "The DHCP client is on its expected VLAN and lacks an active lease or its router/DNS options.",
+    "proposal": "Review the DHCP client and server evidence, pool and VLAN mapping. Escalate if the DORA stage or configuration discrepancy is unclear.",
+    "verify": "Check an active matching lease, the default route and a DNS answer.",
+    "rollback": "Keep the lease and interface snapshots for operator review."
+  },
+  {
+    "id": "RB06",
+    "version": "1.0.0",
+    "title": "Investigate packet loss",
+    "hypothesis": "packet_loss",
+    "target": "source",
+    "keywords": "packet_loss intermittent loss delay rtt transport jitter degraded",
+    "preconditions": "Repeated observations show loss or variable RTT and other application canaries establish scope.",
+    "proposal": "Compare loss, RTT, interface counters and DNS/HTTP canaries for the affected source.",
+    "verify": "Repeat probes from the affected source and an independent canary.",
+    "rollback": "Retain the relevant measurements for operator review."
+  }
+]

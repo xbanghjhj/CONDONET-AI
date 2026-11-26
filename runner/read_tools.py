@@ -163,6 +163,8 @@ class ReadOnlyRunner:
 
     @staticmethod
     def ping(result):
+        if result.returncode == 2 and "Network is unreachable" in result.stderr:
+            return "failed", "icmp_unreachable", {}, {}
         loss = re.search(r"([\d.]+)% packet loss", result.stdout)
         if result.returncode not in (0, 1) or not loss:
             return "missing", "runner_error", {}, {}
@@ -230,12 +232,16 @@ class ReadOnlyRunner:
 
     @staticmethod
     def network(probe, result):
+        if (probe.tool == "route" and result.returncode == 2
+                and "Network is unreachable" in result.stderr):
+            return "failed", "route_unreachable", {}, {}
         if result.returncode != 0:
             return "missing", "runner_error", {}, {}
         row = json.loads(result.stdout)[0]
         if probe.tool == "interface":
             addresses = [f"{entry['local']}/{entry['prefixlen']}" for entry in row["addr_info"]]
-            details = {"interface": row["ifname"], "addresses": addresses}
+            details = {"interface": row["ifname"], "addresses": addresses,
+                       "up": "UP" in row.get("flags", ()), "operstate": row.get("operstate")}
         else:
             details = {"interface": row["dev"], "source_address": row["prefsrc"],
                        "gateway": row.get("gateway")}
