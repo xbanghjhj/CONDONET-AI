@@ -1,0 +1,7 @@
+destroy table ip condonet
+table ip condonet {
+    chain postrouting {
+        type nat hook postrouting priority srcnat; policy accept;
+        oifname "eth2" ip saddr { 10.60.10.0/24, 10.60.20.0/24, 10.60.30.0/24, 10.60.40.0/24, 10.60.50.0/24 } counter masquerade
+    }
+}

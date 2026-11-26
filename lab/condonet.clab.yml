@@ -1,0 +1,63 @@
+name: condonet
+
+topology:
+  defaults:
+    kind: linux
+    image: condonet/lab-node:day02
+    network-mode: none
+    sysctls:
+      net.ipv6.conf.default.disable_ipv6: "1"
+
+  nodes:
+    sw:
+      binds:
+        - ../configs/switch/configure.sh:/condonet/configure.sh:ro
+      exec:
+        - /bin/sh /condonet/configure.sh
+    gw:
+      binds:
+        - ../configs/gateway/configure.sh:/condonet/configure.sh:ro
+        - ../configs/gateway/nat.nft:/condonet/nat.nft:ro
+      exec:
+        - /bin/sh /condonet/configure.sh
+    admin:
+      group: hosts
+      exec:
+        - /bin/sh /condonet/configure-host.sh 10.60.10.10/24 10.60.10.1
+    resident:
+      group: hosts
+      exec:
+        - /bin/sh /condonet/configure-host.sh 10.60.20.10/24 10.60.20.1
+    guest:
+      group: hosts
+      exec:
+        - /bin/sh /condonet/configure-host.sh 10.60.30.10/24 10.60.30.1
+    camera:
+      group: hosts
+      exec:
+        - /bin/sh /condonet/configure-host.sh 10.60.40.10/24 10.60.40.1
+    svc:
+      group: hosts
+      exec:
+        - /bin/sh /condonet/configure-host.sh 10.60.50.10/24 10.60.50.1
+    wan:
+      binds:
+        - ../configs/host.sh:/condonet/configure-host.sh:ro
+        - ../configs/wan-http.py:/condonet/wan-http.py:ro
+      exec:
+        - /bin/sh /condonet/configure-host.sh 10.60.254.2/30
+        - /bin/sh -c 'nohup python3 -u /condonet/wan-http.py >/tmp/condonet-wan-http.log 2>&1 </dev/null &'
+
+  groups:
+    hosts:
+      binds:
+        - ../configs/host.sh:/condonet/configure-host.sh:ro
+
+  links:
+    - endpoints: ["sw:eth1", "gw:eth1"]
+    - endpoints: ["sw:eth2", "admin:eth1"]
+    - endpoints: ["sw:eth3", "resident:eth1"]
+    - endpoints: ["sw:eth4", "guest:eth1"]
+    - endpoints: ["sw:eth5", "camera:eth1"]
+    - endpoints: ["sw:eth6", "svc:eth1"]
+    - endpoints: ["gw:eth2", "wan:eth1"]
