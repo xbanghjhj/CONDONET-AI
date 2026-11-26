@@ -5,9 +5,8 @@ from ipaddress import IPv4Address, IPv4Network
 from app.agent import grounded_findings
 from app.eve_ingest import SIGNATURES
 from app.retrieval import CATALOG
-from app.schemas import RemediationParameters, RemediationPlan
+from app.schemas import RemediationParameters, RemediationPlan, known_probes
 from runner.plans import QUARANTINE_TTL_SECONDS, RUNBOOKS
-from runner.read_tools import SOURCES
 from scripts.verify import HOST_BY_NAME, container_name
 
 
@@ -75,11 +74,9 @@ class RunnerPolicy:
             raise PolicyDenied("Runbook or standard configuration changed")
         parameters = plan.parameters
         if rule.process:
-            if (plan.target != "svc" or plan.source_node not in SOURCES
+            if (plan.target != "svc" or f"{plan.source_node}-portal-http" not in known_probes()
                     or parameters != RemediationParameters()):
                 raise PolicyDenied("Service target, source or parameters outside the allowlist")
-            if plan.source_node == "guest":
-                raise PolicyDenied("Guest has no allowed portal probe")
             return "svc"
         if (plan.target != plan.source_node or plan.source_node not in {value[0] for value in SIGNATURES.values()}
                 or parameters.ttl_seconds != QUARANTINE_TTL_SECONDS or parameters.source_ipv4 is None):
@@ -113,7 +110,7 @@ class RunnerPolicy:
             if operation == "add":
                 if not approval_id or not re.fullmatch(r"[a-f0-9]{32}", approval_id):
                     raise PolicyDenied("Quarantine ownership needs a valid approval ID")
-                commands["add"] = ("nft", "add", "element", *element, "timeout", "120s",
+                commands["add"] = ("nft", "add", "element", *element, "timeout", f"{QUARANTINE_TTL_SECONDS}s",
                                    "comment", f'"condonet-{approval_id}"', "}")
         if operation not in commands:
             raise PolicyDenied("Operation outside the allowlist")

@@ -86,7 +86,8 @@ def review_blockers(proposal, approval, evidence, now=None):
         blockers.append("Thiếu thay đổi dự kiến")
     if not all(proposal.get(field) for field in ("impact", "rollback", "verify", "approval_ttl_seconds")):
         blockers.append("Thiếu tác động, thời hạn, xác minh hoặc rollback")
-    active_evidence = {row["id"] for row in evidence if row.get("id") and row.get("status") != "missing"}
+    active_evidence = {row["id"] for row in evidence
+                       if row.get("id") and row.get("status") in {"healthy", "failed", "alert", "expected_deny"}}
     if not plan.get("evidence_ids") or not set(plan["evidence_ids"]) <= active_evidence:
         blockers.append("Thiếu bằng chứng của đề xuất")
     if not proposal.get("plan_hash") or approval.get("plan_hash") != proposal["plan_hash"]:

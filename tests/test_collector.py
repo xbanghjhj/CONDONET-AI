@@ -52,6 +52,9 @@ class CollectorTest(unittest.TestCase):
         self.assertEqual(opened["event"], "incident_opened")
         self.assertEqual(opened["source_node"], "resident")
         self.assertEqual(opened["evidence_ids"], [first, second, third])
+        self.assertEqual(self.events[-2][0], "probes")
+        self.assertEqual(self.events[-2][1]["id"], third)
+        self.assertEqual(self.events[-2][1]["incident_id"], opened["id"])
         self.sample(30)
         deduplicated = self.incidents()[-1]
         self.assertEqual(deduplicated["event"], "incident_deduplicated")
@@ -105,7 +108,9 @@ class CollectorTest(unittest.TestCase):
             self.sample(tick)
         self.sample(30, "missing", "runner_timeout")
         self.assertEqual([row["event"] for row in self.incidents()], ["incident_opened"])
-        self.sample(40, "healthy", "http_response")
+        recovery = self.sample(40, "healthy", "http_response")
+        self.assertEqual(self.events[-2][1]["id"], recovery)
+        self.assertEqual(self.events[-1][1]["evidence_ids"], [recovery])
         self.sample(50, "healthy", "http_response")
         self.assertEqual([row["event"] for row in self.incidents()],
                          ["incident_opened", "incident_recovered"])

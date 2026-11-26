@@ -86,20 +86,20 @@ def evidence_view(detail):
 def show_result(approval, audit):
     result = approval.get("result") if approval else None
     if result:
-        columns = [("Trước", "before"), ("Sau", "after"), ("Rollback", "rollback")]
+        columns = [("Trước", "before"), ("Sau", "after"), ("Hết hạn", "expiry"), ("Rollback", "rollback")]
         states = {label: result[key] for label, key in columns if key in result}
         if states:
             with st.expander("Snapshot thực tế trước và sau", expanded=True):
                 st.json(states, expanded=1)
         if result.get("rollback_status") == "verified":
             st.badge("Đã xác minh rollback", color="violet")
-        samples = [row for group in ("postcheck", "expiry_probes", "rollback_probes")
-                   for row in result.get(group, [])]
+        stages = {"postcheck": "Sau thay đổi", "expiry_probes": "Sau hết hạn", "rollback_probes": "Sau rollback"}
+        samples = [{"Giai đoạn": label, "UTC": utc_label(row["timestamp"]),
+                    "Probe": row["probe_id"], "Kết quả": row["status"]}
+                   for group, label in stages.items() for row in result.get(group, [])]
         if samples:
             with st.expander("Mẫu xác minh và canary"):
-                st.dataframe([{"UTC": utc_label(row["timestamp"]), "Probe": row["probe_id"],
-                               "Kết quả": row["status"]} for row in samples],
-                             hide_index=True, alt="Kết quả probe và canary")
+                st.dataframe(samples, hide_index=True, alt="Kết quả probe và canary")
         if result.get("error"):
             st.warning(result["error"])
     if audit:
@@ -118,7 +118,8 @@ def proposal_view(detail):
     if not proposal:
         if agent and agent["error"]:
             st.info(REASONS.get(agent["error"], agent["error"]))
-        if st.button("Phân tích incident", key="investigate", disabled=bool(agent)):
+        completed = agent and agent["phase"] in {"propose", "diagnosed", "need_human"}
+        if st.button("Phân tích incident", key="investigate", disabled=bool(completed)):
             return "investigate"
         review_controls(None, None, detail["evidence"])
         return None

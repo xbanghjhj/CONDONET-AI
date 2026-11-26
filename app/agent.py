@@ -7,10 +7,12 @@ from urllib.request import ProxyHandler, Request, build_opener
 
 from pydantic import ValidationError
 
+from app.eve_ingest import SIGNATURES
 from app.incident_store import Evidence, IncidentStore
 from app.retrieval import RunbookRetriever
 from app.schemas import (AgentState, Contract, Decision, MODEL_TIMEOUT, PROBE_TIMEOUT,
                          ProbeRequest, known_probes)
+from runner.plans import QUARANTINE_TTL_SECONDS
 from runner.probe_socket import ProbeClient
 from scripts.verify import HOST_BY_NAME, load_cases
 
@@ -113,7 +115,7 @@ def grounded_findings(incident, observations):
     if incident.origin == "ids_test":
         alerts = [item.id for item in scoped if item.probe == "eve" and item.status == "alert"
                   and item.evidence.get("label") == "lab_test"
-                  and item.evidence.get("sid") in {1000001, 1000002}]
+                  and item.evidence.get("sid") in SIGNATURES]
         return {"ids_test": alerts} if alerts else {}
     policy = [item.id for item in scoped if expected_policy_evidence(item)]
     if policy:
@@ -215,7 +217,7 @@ class Agent:
             options[f"propose-{hit.id}-{hit.version}"] = Decision(
                 status="propose", hypothesis=hit.hypothesis, evidence_ids=findings[hit.hypothesis],
                 runbook_id=hit.id, runbook_version=hit.version, target=proposal_target(hit, incident),
-                parameters={"ttl_seconds": 120} if hit.id == "RB03" else {},
+                parameters={"ttl_seconds": QUARANTINE_TTL_SECONDS} if hit.id == "RB03" else {},
                 risk="medium" if hit.id == "RB03" else "low")
         if not findings:
             for probe in probes:

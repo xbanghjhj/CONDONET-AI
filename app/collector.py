@@ -64,24 +64,27 @@ class Collector:
             return ProbeResult.observed(probe, "missing", "invalid_runner_result")
         return result
 
-    def emit_incident(self, event, incident, result, reason, evidence_ids):
-        self.emit("incidents", {
+    @staticmethod
+    def incident_event(event, incident, result, reason, evidence_ids):
+        return {
             "event": event, "id": incident.id, "timestamp": result.record()["timestamp"],
             "source_node": result.probe.source_node, "service": result.probe.service,
             "probe": result.probe.tool, "reason": reason, "evidence_ids": evidence_ids,
-        })
+        }
 
     def track_incident(self, result):
         probe = result.probe
         previous = self.latest.get(probe.id)
         if result.status != "failed" or probe.tool not in INCIDENT_PROBES:
             self.streaks.pop(probe.id, None)
+            events = []
             if result.status == "healthy" and probe.tool in INCIDENT_PROBES:
                 for (source, service, reason), incident in self.incidents.items():
                     if incident.active and (source, service) == probe.labels[:2]:
                         incident.active = False
-                        self.emit_incident("incident_recovered", incident, result, reason, [result.id])
-            return None
+                        events.append(self.incident_event("incident_recovered", incident,
+                                                          result, reason, [result.id]))
+            return None, events
 
         age = (result.timestamp - previous.timestamp).total_seconds() if previous else None
         if (previous is None or previous.status != "failed" or previous.reason != result.reason
@@ -90,7 +93,7 @@ class Collector:
         streak = self.streaks.setdefault(probe.id, deque(maxlen=FAILURE_THRESHOLD))
         streak.append(result.id)
         if len(streak) < FAILURE_THRESHOLD:
-            return None
+            return None, ()
 
         key = (*probe.labels[:2], result.reason)
         incident = self.incidents.get(key)
@@ -103,8 +106,7 @@ class Collector:
             incident = Incident(uuid4().hex, timestamp)
             self.incidents[key] = incident
             event = "incident_opened"
-        self.emit_incident(event, incident, result, result.reason, list(streak))
-        return incident.id
+        return incident.id, (self.incident_event(event, incident, result, result.reason, list(streak)),)
 
     def poll(self):
         with self.poll_lock:
@@ -112,12 +114,14 @@ class Collector:
                 results = tuple(workers.map(self.collect_probe, self.probes))
             with self.state_lock:
                 for result in results:
-                    incident_id = self.track_incident(result)
+                    incident_id, events = self.track_incident(result)
                     self.latest[result.probe.id] = result
                     record = result.record()
                     if incident_id:
                         record["incident_id"] = incident_id
                     self.emit("probes", record)
+                    for event in events:
+                        self.emit("incidents", event)
             return results
 
     def snapshot(self):
