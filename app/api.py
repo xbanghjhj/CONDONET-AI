@@ -13,11 +13,12 @@ from app.agent import OLLAMA_MODEL, OllamaModel
 from app.approvals import ApprovalConflict, ApprovalStore, Review
 from app.incidents import IncidentService
 from app.metrics import METRICS_ADDRESS
+from app.remediation import RemediationService, RunnerUnavailable
 from app.schemas import PROBE_TIMEOUT, Identifier
+from lab.topology import HOSTS, WAN_ADDRESS
 from runner.action_socket import ActionClient
 from runner.policy import RunnerPolicy
 from runner.probe_socket import ProbeClient
-from scripts.verify import HOSTS, WAN_ADDRESS
 
 
 @dataclass(frozen=True)
@@ -37,13 +38,13 @@ def create_app(settings, model=None):
         raise ValueError("A local operator token is required")
     app = FastAPI()
     approvals = ApprovalStore(settings.approval_db)
-    action_client = ActionClient(settings.action_socket)
     bearer = HTTPBearer(auto_error=False)
     service = None
     if settings.incident_db is not None:
         probes = ProbeClient(settings.probe_socket, PROBE_TIMEOUT) if settings.probe_socket else None
         service = IncidentService(settings.incident_db, approvals, RunnerPolicy(settings.lab),
                                   probes, model or OllamaModel(settings.model), settings.operator)
+    remediation = RemediationService(approvals, ActionClient(settings.action_socket), service)
 
     def actor(credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)]):
         if credentials is None or not compare_digest(credentials.credentials.encode(), settings.token.encode()):
@@ -51,23 +52,14 @@ def create_app(settings, model=None):
         return settings.operator
 
     def review(incident_id, body, operator, approve):
-        if service is not None:
-            detail = incident_detail(incident_id)
-            approval = detail["approval"]
-            if approve and approval and approval["status"] in {"pending", "approved"} and detail["review_blockers"]:
-                raise HTTPException(409, detail["review_blockers"])
         try:
-            ticket = approvals.review(incident_id, operator, body.plan_hash, approve)
+            ticket = remediation.review(incident_id, operator, body.plan_hash, approve)
         except ApprovalConflict as error:
-            raise HTTPException(409, str(error)) from error
-        if approve and ticket.status == "approved":
-            try:
-                action_client.submit(ticket)
-            except OSError:
-                raise HTTPException(503, "Approval recorded, runner unavailable") from None
-            ticket = approvals.get(incident_id)
-            if ticket.status == "approved":
-                raise HTTPException(409, "Approval recorded, runner could not claim the target")
+            raise HTTPException(409, error.args[0]) from error
+        except RunnerUnavailable as error:
+            raise HTTPException(503, str(error)) from error
+        if ticket is None:
+            raise HTTPException(404, "Incident not found")
         return ticket.record()
 
     @app.post("/incidents/{incident_id}/approve")

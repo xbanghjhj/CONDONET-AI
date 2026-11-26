@@ -7,7 +7,7 @@ from ipaddress import IPv4Address, IPv4Network
 from pathlib import Path
 
 from app.incident_store import Evidence, IncidentStore, StoredIncident
-from scripts.verify import HOSTS, HOST_BY_NAME
+from lab.topology import HOSTS, HOST_BY_NAME
 
 URI_SID = 1000001
 SYN_SID = 1000002

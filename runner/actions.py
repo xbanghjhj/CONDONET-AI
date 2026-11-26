@@ -5,8 +5,8 @@ from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
 from time import monotonic, sleep
 
+from lab.topology import container_name
 from runner.plans import QUARANTINE_TTL_SECONDS, RUNBOOKS
-from scripts.verify import container_name
 
 
 class ActionFailed(ValueError):

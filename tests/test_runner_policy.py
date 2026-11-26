@@ -138,19 +138,25 @@ def test_approval_api_and_real_socket_only_dispatch_once(tmp_path):
     settings = ApiSettings(db, path, ticket.actor, "test-token")
     received = []
     done = Event()
+    url = "/incidents/incident-1/approve"
+    body = {"plan_hash": ticket.plan_hash}
+    headers = {"Authorization": "Bearer test-token"}
 
     def record(claimed):
         received.append(claimed)
         done.set()
+
+    with TestClient(create_app(settings)) as api:
+        offline = api.post(url, json=body, headers=headers)
+        assert offline.status_code == 503
+        assert offline.json()["detail"] == "Approval recorded, runner unavailable"
+        assert store.get(ticket.plan.incident_id).status == "approved"
 
     with ActionServer(path, store, policy, record, api_uid=os.getuid()) as server:
         assert path.stat().st_mode & 0o777 == 0o600
         worker = Thread(target=server.serve_forever, daemon=True)
         worker.start()
         try:
-            url = "/incidents/incident-1/approve"
-            body = {"plan_hash": ticket.plan_hash}
-            headers = {"Authorization": "Bearer test-token"}
             with TestClient(create_app(replace(settings, operator="other"))) as wrong_actor:
                 assert wrong_actor.post(url, json=body, headers=headers).status_code == 409
             with TestClient(create_app(settings)) as api:

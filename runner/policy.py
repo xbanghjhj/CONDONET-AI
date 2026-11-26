@@ -6,8 +6,8 @@ from app.agent import grounded_findings
 from app.eve_ingest import SIGNATURES
 from app.retrieval import CATALOG
 from app.schemas import RemediationParameters, RemediationPlan, known_probes
+from lab.topology import HOST_BY_NAME, container_name
 from runner.plans import QUARANTINE_TTL_SECONDS, RUNBOOKS
-from scripts.verify import HOST_BY_NAME, container_name
 
 
 class PolicyDenied(ValueError):

@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from scripts.verify import (DNS_RECORDS, GATEWAYS, HOST_BY_NAME, HTTP_BODY_MARKERS, TCP_CONNECT,
-                            WAN_ADDRESS, WAN_GATEWAY, container_name, load_cases,
-                            ping_arguments)
+from lab.policy import TCP_CONNECT, load_cases, ping_arguments
+from lab.topology import (DNS_RECORDS, GATEWAYS, HOST_BY_NAME, HTTP_BODY_MARKERS, WAN_ADDRESS,
+                          WAN_GATEWAY, container_name)
 
 SOURCES = ("admin", "resident", "guest")
 MONITORED_PROBES = (

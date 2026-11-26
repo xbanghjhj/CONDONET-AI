@@ -12,9 +12,10 @@ from app.incident_store import Evidence, IncidentStore
 from app.retrieval import RunbookRetriever
 from app.schemas import (AgentState, Contract, Decision, MODEL_TIMEOUT, PROBE_TIMEOUT,
                          ProbeRequest, known_probes)
+from lab.policy import load_cases
+from lab.topology import HOST_BY_NAME
 from runner.plans import QUARANTINE_TTL_SECONDS
 from runner.probe_socket import ProbeClient
-from scripts.verify import HOST_BY_NAME, load_cases
 
 OLLAMA_MODEL = "qwen3.5:2b"
 OLLAMA_URL = "http://127.0.0.1:11434/api/chat"
