@@ -70,11 +70,16 @@ class IncidentStore:
 
     def get_incident(self, incident_id):
         row = self.connection.execute("SELECT record FROM incidents WHERE id = ?", (incident_id,)).fetchone()
-        if row is None:
-            return None
-        record = json.loads(row[0])
+        return self.incident_record(row[0]) if row else None
+
+    @staticmethod
+    def incident_record(payload):
+        record = json.loads(payload)
         record["evidence_ids"] = tuple(record["evidence_ids"])
         return StoredIncident(**record)
+
+    def list_incidents(self):
+        return [self.incident_record(row[0]) for row in self.connection.execute("SELECT record FROM incidents")]
 
     def record_collector(self, stream, record):
         if stream == "probes":

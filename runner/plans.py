@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
 
@@ -71,3 +72,31 @@ def preview(plan):
         "rollback": runbook.rollback,
         "approval_ttl_seconds": APPROVAL_TTL_SECONDS,
     }
+
+
+def review_blockers(proposal, approval, evidence, now=None):
+    if not proposal or not approval:
+        return ["Chưa có đề xuất chờ xử lý"]
+    blockers = []
+    plan = proposal.get("plan", {})
+    if not all(plan.get(field) for field in ("runbook_id", "runbook_version", "target")):
+        blockers.append("Thiếu runbook, phiên bản hoặc đích")
+    change = proposal.get("change", {})
+    if not all(change.get(field) for field in ("resource", "before", "after")):
+        blockers.append("Thiếu thay đổi dự kiến")
+    if not all(proposal.get(field) for field in ("impact", "rollback", "verify", "approval_ttl_seconds")):
+        blockers.append("Thiếu tác động, thời hạn, xác minh hoặc rollback")
+    active_evidence = {row["id"] for row in evidence if row.get("id") and row.get("status") != "missing"}
+    if not plan.get("evidence_ids") or not set(plan["evidence_ids"]) <= active_evidence:
+        blockers.append("Thiếu bằng chứng của đề xuất")
+    if not proposal.get("plan_hash") or approval.get("plan_hash") != proposal["plan_hash"]:
+        blockers.append("Hash đề xuất không khớp approval")
+    if approval.get("status") not in {"pending", "approved"}:
+        blockers.append("Approval đã đóng")
+    try:
+        expiration = datetime.fromisoformat(approval.get("expires_at", ""))
+        if expiration <= (now or datetime.now(timezone.utc)):
+            blockers.append("Approval đã hết hạn")
+    except (TypeError, ValueError):
+        blockers.append("Thiếu thời điểm hết hạn")
+    return blockers
