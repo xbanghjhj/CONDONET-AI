@@ -37,6 +37,7 @@ WAN_ADDRESS = "10.60.254.2"
 WAN_GATEWAY = "10.60.254.1"
 DNS_ADDRESS = HOST_BY_NAME["svc"].address
 DNS_RECORDS = {"portal.condo.test": DNS_ADDRESS, "internet.test": WAN_ADDRESS}
+HTTP_BODY_MARKERS = {"portal": "CondoNet Portal", "camera": "CondoNet Camera"}
 MATRIX_PATH = Path(__file__).resolve().parents[1] / "tests" / "policy-cases.yaml"
 DHCP_LOG = "/var/log/condonet-dhcp.log"
 SSH_BANNER = """import socket, sys
@@ -121,6 +122,14 @@ def load_cases():
     return cases
 
 
+def container_name(lab, node):
+    return f"clab-{lab}-{node}"
+
+
+def ping_arguments(address, count=1):
+    return ("ping", "-n", "-c", str(count), "-W", "1", "-w", "3", address)
+
+
 class LabVerifier:
     def __init__(self, lab, output, cases):
         self.lab = lab
@@ -144,7 +153,7 @@ class LabVerifier:
         return result.stdout
 
     def node_name(self, node):
-        return f"clab-{self.lab}-{node}"
+        return container_name(self.lab, node)
 
     def node_args(self, node, *args):
         return ("docker", "exec", self.node_name(node), *args)
@@ -349,7 +358,7 @@ class LabVerifier:
                 output = self.node(source, "getent", "ahostsv4", name)
                 require({row.split()[0] for row in output.splitlines()} == {address},
                         f"{source}: wrong system resolver answer for {name}")
-        require("CondoNet Portal" in self.http("resident", "http://portal.condo.test/"),
+        require(HTTP_BODY_MARKERS["portal"] in self.http("resident", "http://portal.condo.test/"),
                 "Portal content is missing")
         self.increased("forward_established", before)
 
@@ -383,7 +392,7 @@ class LabVerifier:
                 f"{case.id}: complete DORA transaction missing")
 
     def ping_args(self, address):
-        return ("ping", "-n", "-c", "1", "-W", "1", "-w", "3", address)
+        return ping_arguments(address)
 
     def allow(self, case):
         if case.evidence == "dhcp-lease":
@@ -417,8 +426,8 @@ class LabVerifier:
             require(response.get("source") == WAN_GATEWAY, f"{case.id}: wrong NAT source")
             self.increased("wan_nat", before_nat)
         else:
-            counter, marker = {"portal-body": ("portal_allow", "CondoNet Portal"),
-                               "camera-body": ("camera_allow", "CondoNet Camera")}[case.evidence]
+            counter, marker = {"portal-body": ("portal_allow", HTTP_BODY_MARKERS["portal"]),
+                               "camera-body": ("camera_allow", HTTP_BODY_MARKERS["camera"])}[case.evidence]
             before = self.counter(counter)
             require(marker in self.http(source, f"http://{address}:{case.port}/"),
                     f"{case.id}: wrong HTTP body")

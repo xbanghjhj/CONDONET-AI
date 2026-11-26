@@ -1,0 +1,495 @@
+{
+  "uid": "condonet-day04",
+  "title": "CondoNet Lab Observability",
+  "tags": [
+    "condonet",
+    "observability"
+  ],
+  "schemaVersion": 41,
+  "editable": false,
+  "timezone": "utc",
+  "refresh": "10s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "source",
+        "label": "Source",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "condonet-prometheus"
+        },
+        "definition": "label_values(condonet_probe_sample_present, source_node)",
+        "query": {
+          "query": "label_values(condonet_probe_sample_present, source_node)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "refresh": 1,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Portal availability",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "condonet-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 8,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(condonet_availability{job=\"condonet\",source_node=~\"$source\",service=\"portal\",probe=\"http\"} and on(source_node,service,probe) (time() - condonet_probe_sample_timestamp_seconds{job=\"condonet\",source_node=~\"$source\",service=\"portal\",probe=\"http\"} <= 25)) and on(job) (up{job=\"condonet\"} == 1)",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "No data",
+          "decimals": 0,
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Web down",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "Healthy",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "gray",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Collector scrape",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "condonet-prometheus"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 8,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{job=\"condonet\"}",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "No data",
+          "decimals": 0,
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Collector down",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "Scrape up",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "gray",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Missing or stale probes",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "condonet-prometheus"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 8,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum((1 - condonet_probe_sample_present{job=\"condonet\",source_node=~\"$source\"}) and on(job) (up{job=\"condonet\"} == 1))",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "No data",
+          "decimals": 0,
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "All samples present",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "gray",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Availability",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "condonet-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(condonet_availability{job=\"condonet\",source_node=~\"$source\"} and on(source_node,service,probe) (time() - condonet_probe_sample_timestamp_seconds{job=\"condonet\",source_node=~\"$source\"} <= 25)) and on(job) (up{job=\"condonet\"} == 1)",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{source_node}} · {{service}} · {{probe}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "noValue": "No data",
+          "custom": {
+            "spanNulls": false
+          },
+          "min": 0,
+          "max": 1
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "DNS success",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "condonet-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(condonet_dns_success{job=\"condonet\",source_node=~\"$source\"} and on(source_node,service,probe) (time() - condonet_probe_sample_timestamp_seconds{job=\"condonet\",source_node=~\"$source\"} <= 25)) and on(job) (up{job=\"condonet\"} == 1)",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{source_node}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "noValue": "No data",
+          "custom": {
+            "spanNulls": false
+          },
+          "min": 0,
+          "max": 1
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "DNS latency",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "condonet-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 12,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(condonet_dns_latency_seconds{job=\"condonet\",source_node=~\"$source\"} and on(source_node,service,probe) (time() - condonet_probe_sample_timestamp_seconds{job=\"condonet\",source_node=~\"$source\"} <= 25)) and on(job) (up{job=\"condonet\"} == 1)",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{source_node}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "No data",
+          "custom": {
+            "spanNulls": false
+          }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "HTTP status",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "condonet-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 19,
+        "w": 8,
+        "h": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(condonet_http_status{job=\"condonet\",source_node=~\"$source\"} and on(source_node,service,probe) (time() - condonet_probe_sample_timestamp_seconds{job=\"condonet\",source_node=~\"$source\"} <= 25)) and on(job) (up{job=\"condonet\"} == 1)",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{source_node}} · {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "noValue": "No data",
+          "custom": {
+            "spanNulls": false
+          }
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "HTTP body match",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "condonet-prometheus"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 19,
+        "w": 8,
+        "h": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(condonet_http_body_match{job=\"condonet\",source_node=~\"$source\"} and on(source_node,service,probe) (time() - condonet_probe_sample_timestamp_seconds{job=\"condonet\",source_node=~\"$source\"} <= 25)) and on(job) (up{job=\"condonet\"} == 1)",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{source_node}} · {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "noValue": "No data",
+          "custom": {
+            "spanNulls": false
+          },
+          "min": 0,
+          "max": 1
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "HTTP latency",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "condonet-prometheus"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 19,
+        "w": 8,
+        "h": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(condonet_http_latency_seconds{job=\"condonet\",source_node=~\"$source\"} and on(source_node,service,probe) (time() - condonet_probe_sample_timestamp_seconds{job=\"condonet\",source_node=~\"$source\"} <= 25)) and on(job) (up{job=\"condonet\"} == 1)",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{source_node}} · {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "No data",
+          "custom": {
+            "spanNulls": false
+          }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Gateway RTT",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "condonet-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(condonet_rtt_seconds{job=\"condonet\",source_node=~\"$source\"} and on(source_node,service,probe) (time() - condonet_probe_sample_timestamp_seconds{job=\"condonet\",source_node=~\"$source\"} <= 25)) and on(job) (up{job=\"condonet\"} == 1)",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{source_node}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "No data",
+          "custom": {
+            "spanNulls": false
+          }
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Gateway packet loss",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "condonet-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 26,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(condonet_packet_loss_ratio{job=\"condonet\",source_node=~\"$source\"} and on(source_node,service,probe) (time() - condonet_probe_sample_timestamp_seconds{job=\"condonet\",source_node=~\"$source\"} <= 25)) and on(job) (up{job=\"condonet\"} == 1)",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{source_node}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "noValue": "No data",
+          "custom": {
+            "spanNulls": false
+          },
+          "min": 0,
+          "max": 1
+        }
+      }
+    }
+  ]
+}
