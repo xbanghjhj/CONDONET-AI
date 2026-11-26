@@ -15,4 +15,4 @@ ip link set dev eth2 up
 ip address replace 10.60.254.1/30 dev eth2
 ip route replace default via 10.60.254.2 dev eth2
 sysctl -qw net.ipv4.ip_forward=1
-nft -f /condonet/nat.nft
+/bin/sh /condonet/firewall/apply.sh

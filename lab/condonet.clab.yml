@@ -3,7 +3,7 @@ name: condonet
 topology:
   defaults:
     kind: linux
-    image: condonet/lab-node:day02
+    image: condonet/lab-node:day03
     network-mode: none
     sysctls:
       net.ipv6.conf.default.disable_ipv6: "1"
@@ -17,38 +17,76 @@ topology:
     gw:
       binds:
         - ../configs/gateway/configure.sh:/condonet/configure.sh:ro
-        - ../configs/gateway/nat.nft:/condonet/nat.nft:ro
+        - ../configs/nftables:/condonet/firewall:ro
+        - ../configs/dhcp/dnsmasq.conf:/condonet/dhcp.conf:ro
+        - ../configs/dhcp/server.conf:/condonet/programs/dhcp.conf:ro
+        - ../configs/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf:ro
+        - ../configs/supervisor/start.sh:/condonet/start.sh:ro
+        - ../configs/ssh/sshd_config:/condonet/ssh/sshd_config:ro
+        - ../configs/ssh/start.sh:/condonet/ssh/start.sh:ro
+        - ../configs/ssh/server.conf:/condonet/programs/ssh.conf:ro
       exec:
         - /bin/sh /condonet/configure.sh
+        - /bin/sh /condonet/start.sh
     admin:
       group: hosts
       exec:
         - /bin/sh /condonet/configure-host.sh 10.60.10.10/24 10.60.10.1
     resident:
-      group: hosts
+      group: dhcp-clients
       exec:
-        - /bin/sh /condonet/configure-host.sh 10.60.20.10/24 10.60.20.1
+        - /bin/sh /condonet/configure-host.sh dhcp
     guest:
-      group: hosts
+      group: dhcp-clients
       exec:
-        - /bin/sh /condonet/configure-host.sh 10.60.30.10/24 10.60.30.1
+        - /bin/sh /condonet/configure-host.sh dhcp
     camera:
       group: hosts
+      binds:
+        - ../configs/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf:ro
+        - ../configs/supervisor/start.sh:/condonet/start.sh:ro
+        - ../configs/nginx/nginx.conf:/condonet/nginx.conf:ro
+        - ../configs/nginx/server.conf:/condonet/programs/nginx.conf:ro
+        - ../configs/nginx/camera.html:/condonet/index.html:ro
       exec:
         - /bin/sh /condonet/configure-host.sh 10.60.40.10/24 10.60.40.1
+        - /bin/sh /condonet/start.sh
     svc:
       group: hosts
+      binds:
+        - ../configs/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf:ro
+        - ../configs/supervisor/start.sh:/condonet/start.sh:ro
+        - ../configs/ssh/sshd_config:/condonet/ssh/sshd_config:ro
+        - ../configs/ssh/start.sh:/condonet/ssh/start.sh:ro
+        - ../configs/ssh/server.conf:/condonet/programs/ssh.conf:ro
+        - ../configs/nginx/nginx.conf:/condonet/nginx.conf:ro
+        - ../configs/nginx/server.conf:/condonet/programs/nginx.conf:ro
+        - ../configs/nginx/portal.html:/condonet/index.html:ro
+        - ../configs/dns/dnsmasq.conf:/condonet/dns.conf:ro
+        - ../configs/dns/server.conf:/condonet/programs/dns.conf:ro
       exec:
         - /bin/sh /condonet/configure-host.sh 10.60.50.10/24 10.60.50.1
+        - /bin/sh /condonet/start.sh
     wan:
       binds:
         - ../configs/host.sh:/condonet/configure-host.sh:ro
         - ../configs/wan-http.py:/condonet/wan-http.py:ro
+        - ../configs/supervisor/wan-http.conf:/condonet/programs/wan-http.conf:ro
+        - ../configs/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf:ro
+        - ../configs/supervisor/start.sh:/condonet/start.sh:ro
       exec:
         - /bin/sh /condonet/configure-host.sh 10.60.254.2/30
-        - /bin/sh -c 'nohup python3 -u /condonet/wan-http.py >/tmp/condonet-wan-http.log 2>&1 </dev/null &'
+        - ip route replace 10.60.0.0/16 via 10.60.254.1 dev eth1
+        - /bin/sh /condonet/start.sh
 
   groups:
+    dhcp-clients:
+      binds:
+        - ../configs/host.sh:/condonet/configure-host.sh:ro
+        - ../configs/dhcp/client.conf:/condonet/programs/dhcp-client.conf:ro
+        - ../configs/dhcp/lease.sh:/condonet/dhcp-lease.sh:ro
+        - ../configs/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf:ro
+        - ../configs/supervisor/start.sh:/condonet/start.sh:ro
     hosts:
       binds:
         - ../configs/host.sh:/condonet/configure-host.sh:ro

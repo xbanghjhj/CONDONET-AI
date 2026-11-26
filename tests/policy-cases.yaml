@@ -1,0 +1,42 @@
+cases:
+  - {id: admin-gateway-icmp, source: admin, destination: gw-admin, protocol: icmp, expect: allow, evidence: echo-reply}
+  - {id: admin-resident-icmp, source: admin, destination: resident, protocol: icmp, expect: allow, evidence: echo-reply}
+  - {id: admin-guest-icmp, source: admin, destination: guest, protocol: icmp, expect: allow, evidence: echo-reply}
+  - {id: admin-camera-icmp, source: admin, destination: camera, protocol: icmp, expect: allow, evidence: echo-reply}
+  - {id: admin-svc-icmp, source: admin, destination: svc, protocol: icmp, expect: allow, evidence: echo-reply}
+  - {id: admin-wan-icmp, source: admin, destination: wan, protocol: icmp, expect: allow, evidence: echo-reply}
+  - {id: admin-gateway-ssh, source: admin, destination: gw-admin, protocol: tcp, port: 22, expect: allow, evidence: ssh-banner}
+  - {id: admin-svc-ssh, source: admin, destination: svc, protocol: tcp, port: 22, expect: allow, evidence: ssh-banner}
+  - {id: admin-portal-http, source: admin, destination: svc, protocol: tcp, port: 80, expect: canary, evidence: portal-body}
+  - {id: admin-camera-http, source: admin, destination: camera, protocol: tcp, port: 80, expect: canary, evidence: camera-body}
+  - {id: admin-wan-http, source: admin, destination: wan, protocol: tcp, port: 80, expect: canary, evidence: nat-source}
+  - {id: admin-dns-udp, source: admin, destination: svc, protocol: udp, port: 53, expect: allow, evidence: dns-answer}
+  - {id: admin-dns-tcp, source: admin, destination: svc, protocol: tcp, port: 53, expect: allow, evidence: dns-answer}
+  - {id: resident-dhcp, source: resident, destination: gw-resident, protocol: udp, port: 67, expect: allow, evidence: dhcp-lease}
+  - {id: resident-gateway-icmp, source: resident, destination: gw-resident, protocol: icmp, expect: allow, evidence: echo-reply}
+  - {id: resident-dns-udp, source: resident, destination: svc, protocol: udp, port: 53, expect: allow, evidence: dns-answer}
+  - {id: resident-dns-tcp, source: resident, destination: svc, protocol: tcp, port: 53, expect: allow, evidence: dns-answer}
+  - {id: resident-portal-http, source: resident, destination: svc, protocol: tcp, port: 80, expect: canary, evidence: portal-body}
+  - {id: resident-wan-http, source: resident, destination: wan, protocol: tcp, port: 80, expect: allow, evidence: nat-source}
+  - {id: resident-camera-deny, source: resident, destination: camera, protocol: tcp, port: 80, expect: deny, evidence: forward-drop, control: admin-camera-http}
+  - {id: resident-svc-ssh-deny, source: resident, destination: svc, protocol: tcp, port: 22, expect: deny, evidence: forward-drop, control: admin-svc-ssh}
+  - {id: resident-gateway-ssh-deny, source: resident, destination: gw-admin, protocol: tcp, port: 22, expect: deny, evidence: input-drop, control: admin-gateway-ssh}
+  - {id: resident-guest-deny, source: resident, destination: guest, protocol: icmp, expect: deny, evidence: forward-drop, control: admin-guest-icmp}
+  - {id: guest-dhcp, source: guest, destination: gw-guest, protocol: udp, port: 67, expect: allow, evidence: dhcp-lease}
+  - {id: guest-gateway-icmp, source: guest, destination: gw-guest, protocol: icmp, expect: allow, evidence: echo-reply}
+  - {id: guest-dns-udp, source: guest, destination: svc, protocol: udp, port: 53, expect: allow, evidence: dns-answer}
+  - {id: guest-dns-tcp, source: guest, destination: svc, protocol: tcp, port: 53, expect: allow, evidence: dns-answer}
+  - {id: guest-wan-http, source: guest, destination: wan, protocol: tcp, port: 80, expect: canary, evidence: nat-source}
+  - {id: guest-portal-deny, source: guest, destination: svc, protocol: tcp, port: 80, expect: deny, evidence: forward-drop, control: resident-portal-http}
+  - {id: guest-camera-deny, source: guest, destination: camera, protocol: tcp, port: 80, expect: deny, evidence: forward-drop, control: admin-camera-http}
+  - {id: guest-resident-deny, source: guest, destination: resident, protocol: icmp, expect: deny, evidence: forward-drop, control: admin-resident-icmp}
+  - {id: guest-other-gateway-deny, source: guest, destination: gw-admin, protocol: icmp, expect: deny, evidence: input-drop, control: admin-gateway-icmp}
+  - {id: camera-gateway-icmp, source: camera, destination: gw-camera, protocol: icmp, expect: allow, evidence: echo-reply}
+  - {id: camera-dns-udp, source: camera, destination: svc, protocol: udp, port: 53, expect: allow, evidence: dns-answer}
+  - {id: camera-dns-tcp, source: camera, destination: svc, protocol: tcp, port: 53, expect: allow, evidence: dns-answer}
+  - {id: camera-portal-deny, source: camera, destination: svc, protocol: tcp, port: 80, expect: deny, evidence: forward-drop, control: resident-portal-http}
+  - {id: camera-wan-deny, source: camera, destination: wan, protocol: tcp, port: 80, expect: deny, evidence: forward-drop, control: guest-wan-http}
+  - {id: svc-resident-deny, source: svc, destination: resident, protocol: icmp, expect: deny, evidence: forward-drop, control: admin-resident-icmp}
+  - {id: svc-wan-deny, source: svc, destination: wan, protocol: tcp, port: 80, expect: deny, evidence: forward-drop, control: guest-wan-http}
+  - {id: wan-resident-deny, source: wan, destination: resident, protocol: icmp, expect: deny, evidence: forward-drop, control: admin-resident-icmp}
+  - {id: wan-gateway-ssh-deny, source: wan, destination: gw-admin, protocol: tcp, port: 22, expect: deny, evidence: input-drop, control: admin-gateway-ssh}
