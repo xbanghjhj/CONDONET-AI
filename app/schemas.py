@@ -1,4 +1,7 @@
+import json
 from functools import cache
+from hashlib import sha256
+from ipaddress import IPv4Address
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -14,6 +17,9 @@ RunbookID = Literal["RB01", "RB02", "RB03", "RB04", "RB05", "RB06"]
 Hypothesis = Literal["dns_failure", "web_down", "gateway_unreachable", "expected_deny",
                      "ids_test", "dhcp_failure", "packet_loss", "unknown"]
 Phase = Literal["collect", "diagnose", "investigate", "propose", "diagnosed", "need_human"]
+RemediationID = Literal["RB01", "RB02", "RB03"]
+Version = Annotated[str, Field(pattern=r"^\d+\.\d+\.\d+$")]
+Digest = Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
 
 
 @cache
@@ -49,7 +55,7 @@ class Decision(Contract):
     missing_evidence: list[Annotated[str, Field(max_length=120)]] = Field(default_factory=list, max_length=8)
     next_tool: ProbeRequest | None = None
     runbook_id: RunbookID | None = None
-    runbook_version: Annotated[str, Field(pattern=r"^\d+\.\d+\.\d+$")] | None = None
+    runbook_version: Version | None = None
     target: Node | None = None
     parameters: Parameters = Field(default_factory=Parameters)
     risk: Literal["none", "low", "medium"] = "none"
@@ -69,6 +75,27 @@ class Decision(Contract):
         if self.status == "diagnosed" and not self.evidence_ids:
             raise ValueError("Diagnosis requires evidence")
         return self
+
+
+class RemediationParameters(Contract, frozen=True):
+    source_ipv4: IPv4Address | None = None
+    ttl_seconds: Annotated[int, Field(gt=0, le=120)] | None = None
+
+
+class RemediationPlan(Contract, frozen=True):
+    incident_id: Identifier
+    runbook_id: RemediationID
+    runbook_version: Version
+    target: Node
+    source_node: Node
+    parameters: RemediationParameters = Field(default_factory=RemediationParameters)
+    configuration_sha256: Digest | None = None
+    evidence_ids: Annotated[tuple[Identifier, ...], Field(min_length=1, max_length=16)]
+
+    @property
+    def digest(self):
+        canonical = json.dumps(self.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+        return sha256(canonical.encode()).hexdigest()
 
 
 class AgentState(Contract):

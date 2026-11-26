@@ -85,6 +85,10 @@ def policy_probes():
         if case.evidence in HTTP_SERVICES:
             service = HTTP_SERVICES[case.evidence]
             probes[case.id] = Probe(case.id, case.source, service, "http", address, case.port)
+            if service == "portal":
+                probe_id = f"{case.source}-portal-name-http"
+                probes[probe_id] = Probe(probe_id, case.source, service, "http",
+                                         "portal.condo.test", case.port)
             for tool in ("tcp", "route"):
                 probe_id = f"{case.source}-{service}-{tool}"
                 port = case.port if tool == "tcp" else None
