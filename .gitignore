@@ -33,8 +33,14 @@ models/
 *.qcow2
 *.iso
 
-# Local Day 9 and Day 10 logs, state and media
+# Local evidence, state and media
 /evidence/day09/
 /evidence/day10/
+/evidence/environment/
+/evidence/network-validation/
+/evidence/evaluation/
+/evidence/reproducibility/
+/evidence/demo/
+/evidence/migration-manifest.json
 /evidence/.condonet-day*.lock
 /video/

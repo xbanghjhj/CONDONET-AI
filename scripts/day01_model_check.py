@@ -14,7 +14,7 @@ CONTEXT = int(os.environ.get("CONDONET_CONTEXT", "4096"))
 ROOT = Path(__file__).resolve().parents[1]
 
 stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-OUTDIR = ROOT / "evidence" / "day01" / f"model-{stamp}"
+OUTDIR = ROOT / "evidence" / "environment" / "model-benchmarks" / f"model-{stamp}"
 OUTDIR.mkdir(parents=True, exist_ok=True)
 
 

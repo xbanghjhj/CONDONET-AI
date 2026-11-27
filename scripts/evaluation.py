@@ -23,6 +23,7 @@ from lab.policy import CheckFailed, load_cases, require
 from lab.topology import HOST_BY_NAME
 from runner.plans import APPROVAL_TTL_SECONDS
 from scripts.evaluation_runtime import EvaluationRuntime, wait_for
+from scripts.evidence_store import ACTION_AUDIT, EvidenceStore, write_json
 from scripts.verify import LabVerifier
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,10 +59,6 @@ def slots():
 
 def utc_now():
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
-
-
-def write_json(path, payload):
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 @dataclass
@@ -201,7 +198,7 @@ class Evaluation:
     def record_action(self, trial, detail):
         approval = detail["approval"]
         audit = detail["audit"]
-        write_json(trial.directory / "action.json", detail)
+        write_json(trial.directory / ACTION_AUDIT, detail)
         if approval:
             trial.row["action_id"] = approval["id"]
         for event in audit:
@@ -351,7 +348,9 @@ def main():
     if args.slot and (len(set(args.slot)) != len(args.slot) or not set(args.slot) <= matrix.keys()):
         parser.error("Unknown or duplicate slot")
     args.output = args.output.resolve()
-    if not args.output.is_relative_to(ROOT / "evidence"):
+    try:
+        args.output = EvidenceStore(ROOT).scope(args.output)
+    except ValueError:
         parser.error("Use a fresh output directory below evidence/")
     args.output.mkdir(mode=0o700, parents=True, exist_ok=False)
     lock_path = ROOT / "evidence" / f".{args.lab}.lock"

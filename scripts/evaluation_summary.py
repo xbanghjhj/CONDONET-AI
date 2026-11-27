@@ -6,14 +6,16 @@ from pathlib import Path
 from statistics import median
 
 from lab.policy import load_cases, require
-from scripts.evaluation import CSV_FIELDS, ROOT, TIMINGS, slots, write_json
+from scripts.evaluation import CSV_FIELDS, ROOT, TIMINGS, slots
+from scripts.evidence_store import ACTION_AUDIT, EvidenceStore, write_json
 
 
 def load_runs(paths, matrix):
     observations = []
     ids = set()
+    evidence = EvidenceStore(ROOT)
     for path in paths:
-        with path.open(newline="", encoding="utf-8") as stream:
+        with evidence.locate_input(path).open(newline="", encoding="utf-8") as stream:
             csv_rows = csv.DictReader(stream)
             require(csv_rows.fieldnames == CSV_FIELDS, f"{path}: unexpected CSV header")
             for row in csv_rows:
@@ -22,10 +24,9 @@ def load_runs(paths, matrix):
                         f"{path}: scenario does not match slot {row['slot_id']}")
                 run_id = row["run_id"]
                 require(run_id and run_id not in ids, f"{path}: duplicate or missing run ID")
-                directory = (ROOT / row["evidence"]).resolve()
-                require(directory.is_relative_to(ROOT / "evidence") and directory.name == run_id,
-                        f"{path}: evidence path does not match {run_id}")
-                stored = json.loads((directory / "trial.json").read_text(encoding="utf-8"))
+                directory = evidence.scope(row["evidence"])
+                require(directory.name == run_id, f"{path}: evidence path does not match {run_id}")
+                stored = evidence.read_json(directory / "trial.json")
                 normalized = {key: "" if stored["row"].get(key) is None else str(stored["row"][key])
                               for key in CSV_FIELDS}
                 require(row == normalized, f"{path}: CSV and original evidence differ for {run_id}")
@@ -35,7 +36,7 @@ def load_runs(paths, matrix):
                         require(float(value) == round((clocks[last] - clocks[first]) / 1e9, 3),
                                 f"{path}: invalid monotonic interval for {run_id}")
                 if row["action_id"]:
-                    action = json.loads((directory / "action.json").read_text(encoding="utf-8"))
+                    action = evidence.read_json(directory / ACTION_AUDIT, legacy=directory / "action.json")
                     require(action["approval"]["id"] == row["action_id"] and
                             all(item["incident_id"] == row["incident_id"] for item in action["audit"]),
                             f"{path}: audit does not match {run_id}")
@@ -116,7 +117,8 @@ def main():
     matrix = slots()
     runs = load_runs(args.runs, matrix)
     cases = load_cases()
-    policy = json.loads(args.policy.read_text(encoding="utf-8"))
+    policy_path = EvidenceStore(ROOT).locate_input(args.policy)
+    policy = json.loads(policy_path.read_text(encoding="utf-8"))
     policy_rows = [row for row in policy["checks"] if row["name"] in cases]
     require(len({row["name"] for row in policy_rows}) == len(policy_rows), "Duplicated policy case")
     summary, primary = summarize(runs, policy_rows, matrix, args.protection_verified, args.missing_reason)
