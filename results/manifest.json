@@ -31,7 +31,6 @@
     "digest": "0689d44085e06d165161a8a9a1731344278cfb5aade63a3c3dbdb48ab54b130a"
   },
   "files": {
-    "configs/__pycache__/wan-http.cpython-314.pyc": "e021f9cb38b8ace7a923ae42bd687af331217e7bb9b28cf98d71d6e6421cc701",
     "configs/dhcp/client.conf": "eb36c1239ae4a8bb10382eaf22dada06b8d0a05f8029142705b5711e61787ae5",
     "configs/dhcp/dnsmasq.conf": "1c5a6915b2a5916d152eb10bf6968fc773c38344ba4731532bddf34de8f6d447",
     "configs/dhcp/lease.sh": "0687144628490270d7ccb4c87c041ff485a67c19dfd0df993bc0276dee46fa12",
