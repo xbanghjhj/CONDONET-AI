@@ -2,6 +2,7 @@ import json
 import sqlite3
 from collections import Counter
 from dataclasses import replace
+from io import StringIO
 from threading import Event, Thread
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -13,6 +14,9 @@ from app.api import ApiSettings, create_app
 from app.approvals import ApprovalConflict, ApprovalStore
 from app.collector import Collector
 from app.incident_store import IncidentStore
+from lab.faults import LabFaults
+from lab.policy import CheckFailed
+from lab.topology import container_name
 from runner.action_socket import ActionClient
 from runner.actions import ActionRunner, LabActions, Verifier
 from runner.policy import RunnerPolicy
@@ -20,6 +24,28 @@ from runner.read_tools import ProbeResult, ReadOnlyRunner
 from scripts import evaluation
 from tests.test_incident_api import ObservedModel, seed_incidents
 from tests.test_runner_policy import issue, plan, request_for
+
+
+@pytest.mark.parametrize(("status", "reason", "attempts"), [
+    ("missing", "runner_timeout", 2),
+    ("missing", "invalid_probe_output", 1),
+    ("failed", "probe_timeout", 1),
+])
+def test_baseline_only_repeats_a_local_runner_timeout(status, reason, attempts):
+    verifier = SimpleNamespace(lab="condonet-day09-test", log=StringIO(),
+                               node_name=lambda node: container_name("condonet-day09-test", node))
+    faults = LabFaults(verifier, None)
+    key = "admin-camera-http"
+    probe = faults.probes.probes[key]
+    source = {"container": verifier.node_name(probe.source_node)}
+    faults.probes.run = Mock(side_effect=(ProbeResult.observed(probe, status, reason, source),
+                                         ProbeResult.observed(probe, "healthy", "http_ok", source)))
+    if attempts == 2:
+        assert faults.probe(key, "healthy", retry_baseline_timeout=True)["status"] == "healthy"
+    else:
+        with pytest.raises(CheckFailed, match=reason):
+            faults.probe(key, "healthy", retry_baseline_timeout=True)
+    assert faults.probes.run.call_count == len(verifier.log.getvalue().splitlines()) == attempts
 
 
 def test_mutated_pending_plan_cannot_be_claimed(tmp_path):

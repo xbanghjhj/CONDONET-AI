@@ -23,13 +23,21 @@ class LabFaults:
     def service(self, node, operation, name):
         return self.lab.node(node, "supervisorctl", operation, name)
 
-    def probe(self, key, expected):
+    def probe_record(self, key):
         probe = self.probes.probes[key]
         result = self.probes.run(key).record()
         self.lab.log.write(json.dumps(result, ensure_ascii=False) + "\n")
-        require((result["probe_id"], result["source_node"], result["target"], result["status"],
-                 result["evidence"].get("container")) == (
-                     key, probe.source_node, probe.target, expected, self.lab.node_name(probe.source_node)),
+        require((result["probe_id"], result["source_node"], result["target"],
+                 result["evidence"].get("container")) ==
+                (key, probe.source_node, probe.target, self.lab.node_name(probe.source_node)),
+                f"{key}: probe identity does not match its lab scope")
+        return result
+
+    def probe(self, key, expected, *, retry_baseline_timeout=False):
+        result = self.probe_record(key)
+        if retry_baseline_timeout and (result["status"], result["reason"]) == ("missing", "runner_timeout"):
+            result = self.probe_record(key)
+        require(result["status"] == expected,
                 f"{key}: expected {expected}, got {result['status']} ({result['reason']})")
         return result
 

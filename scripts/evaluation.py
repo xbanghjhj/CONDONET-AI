@@ -102,7 +102,8 @@ class Evaluation:
     def baseline(self, trial, label):
         self.verifier.vlan()
         self.verifier.quarantine_empty()
-        checks = [self.faults.probe(key, "healthy") for key in BASELINE]
+        checks = [self.faults.probe(key, "healthy", retry_baseline_timeout=(label == "before"))
+                  for key in BASELINE]
         for name in ("dns", "nginx"):
             checks.append({"program": name, "status": self.faults.service("svc", "status", name)})
         for name, node in (("dhcp", "gw"), ("dhcp-client", "guest"), ("dhcp-client", "resident")):
