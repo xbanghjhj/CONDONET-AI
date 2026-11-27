@@ -7,7 +7,7 @@ from app.eve_ingest import SIGNATURES
 from app.retrieval import CATALOG
 from app.schemas import RemediationParameters, RemediationPlan, known_probes
 from lab.topology import HOST_BY_NAME, container_name
-from runner.plans import QUARANTINE_TTL_SECONDS, RUNBOOKS
+from runner.plans import DNS_FIXTURE, QUARANTINE_TTL_SECONDS, RUNBOOKS
 
 
 class PolicyDenied(ValueError):
@@ -100,6 +100,10 @@ class RunnerPolicy:
             commands = {key: ("supervisorctl", key, rule.process)
                         for key in ("status", "start", "restart", "stop")}
             commands.update(config=("cat", rule.mounted_path), validate=syntax[rule.process])
+            if rule.process == "dns":
+                commands.update(fixture_present=("test", "-f", DNS_FIXTURE),
+                                fixture_clear=("rm", "-f", DNS_FIXTURE),
+                                fixture_restore=("touch", DNS_FIXTURE))
         else:
             element = ("ip", "condonet", "quarantine", "{", str(plan.parameters.source_ipv4))
             commands = {

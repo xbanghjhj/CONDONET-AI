@@ -4,9 +4,10 @@ import signal
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from threading import Event, Lock, Thread
-from time import monotonic
+from time import monotonic, monotonic_ns
 from uuid import uuid4
 
 from app.incident_store import IncidentStore
@@ -68,6 +69,8 @@ class Collector:
     def incident_event(event, incident, result, reason, evidence_ids):
         return {
             "event": event, "id": incident.id, "timestamp": result.record()["timestamp"],
+            "monotonic_ns": monotonic_ns(),
+            "recorded_at": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
             "source_node": result.probe.source_node, "service": result.probe.service,
             "probe": result.probe.tool, "reason": reason, "evidence_ids": evidence_ids,
         }

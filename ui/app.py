@@ -29,6 +29,12 @@ REASONS = {"dns_failure": "DNS lỗi trong khi portal theo IP còn hoạt độn
            "web_down": "DNS còn hoạt động nhưng portal theo IP lỗi",
            "ids_test": "Suricata nhận sự kiện kiểm thử khớp nguồn trong lab",
            "missing_evidence": "Chưa thu thập đủ bằng chứng"}
+DIAGNOSTIC_GUIDANCE = {
+    "expected_deny": "Guest bị chặn theo policy. Giữ nguyên quyền truy cập hiện tại.",
+    "gateway_unreachable": "Đối chiếu VLAN access, trunk và bảng MAC với topology chuẩn.",
+    "dhcp_failure": "Kiểm tra DHCP, trạng thái lease và các bước discover, offer, request, ack.",
+    "packet_loss": "So sánh tỷ lệ mất gói từ nguồn bị ảnh hưởng với canary độc lập.",
+}
 
 
 def utc_label(value):
@@ -115,16 +121,18 @@ def proposal_view(detail):
     label, color = STATUS[detail["incident"]["status"]]
     st.badge(label, color=color)
     agent = detail["agent"]
+    decision = (agent or {}).get("decision") or {}
     if not proposal:
         if agent and agent["error"]:
             st.info(REASONS.get(agent["error"], agent["error"]))
+        if guidance := DIAGNOSTIC_GUIDANCE.get(decision.get("hypothesis")):
+            st.text(guidance)
         completed = agent and agent["phase"] in {"propose", "diagnosed", "need_human"}
         if st.button("Phân tích incident", key="investigate", disabled=bool(completed)):
             return "investigate"
         review_controls(None, None, detail["evidence"])
         return None
     plan = proposal["plan"]
-    decision = (agent or {}).get("decision") or {}
     with st.container(border=True):
         st.subheader(f'{plan["runbook_id"]} · {RUNBOOK_NAMES[plan["runbook_id"]]}')
         st.caption(f'Phiên bản {plan["runbook_version"]} · Đích `{plan["target"]}`')

@@ -51,3 +51,11 @@ class ReadOnlyRunnerTest(unittest.TestCase):
         result = self.runner.run("admin-gateway-icmp")
         self.assertEqual((result.status, result.reason), ("missing", "runner_error"))
         self.assertEqual(result.measurements, {})
+
+    def test_interface_without_ipv4_is_observed(self):
+        output = ('[{"ifname":"eth1","flags":["UP"],"operstate":"UP",'
+                  '"addr_info":[{"family":"inet6","local":"fe80::1","prefixlen":64}]}]')
+        self.execute.return_value = subprocess.CompletedProcess([], 0, output, "")
+        result = self.runner.run("guest-interface")
+        self.assertEqual((result.status, result.evidence["up"], result.evidence["addresses"]),
+                         ("healthy", True, []))

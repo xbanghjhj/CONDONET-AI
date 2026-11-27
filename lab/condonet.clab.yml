@@ -63,6 +63,7 @@ topology:
         - ../configs/nginx/server.conf:/condonet/programs/nginx.conf:ro
         - ../configs/nginx/portal.html:/condonet/index.html:ro
         - ../configs/dns/dnsmasq.conf:/condonet/dns.conf:ro
+        - ../configs/dns/start.sh:/condonet/dns-start.sh:ro
         - ../configs/dns/server.conf:/condonet/programs/dns.conf:ro
       exec:
         - /bin/sh /condonet/configure-host.sh 10.60.50.10/24 10.60.50.1

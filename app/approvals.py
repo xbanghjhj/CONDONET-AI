@@ -3,7 +3,7 @@ import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from time import time
+from time import monotonic_ns, time
 from uuid import uuid4
 
 from app.schemas import Contract, Digest, Identifier, RemediationPlan
@@ -85,7 +85,7 @@ class ApprovalStore:
 
     def audit(self, connection, ticket, event, details=None):
         plan = ticket.plan
-        record = {"event": event, "utc": utc(self.clock()), "actor": ticket.actor,
+        record = {"event": event, "utc": utc(self.clock()), "monotonic_ns": monotonic_ns(), "actor": ticket.actor,
                   "approval_id": ticket.id, "incident_id": plan.incident_id,
                   "action": plan.runbook_id, "target": plan.target,
                   "evidence_ids": plan.evidence_ids, "plan_hash": ticket.plan_hash,

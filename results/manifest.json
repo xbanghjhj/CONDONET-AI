@@ -1,0 +1,73 @@
+{
+  "python": "Python 3.14.4",
+  "images": {
+    "condonet/lab-node:day03": {
+      "id": "sha256:a264e20757d492995ce19c02d331570b03aa577bfec8cfa42f4ac83896ffe543",
+      "repo_digests": [
+        "condonet/lab-node@sha256:a264e20757d492995ce19c02d331570b03aa577bfec8cfa42f4ac83896ffe543"
+      ]
+    },
+    "jasonish/suricata:8.0.8": {
+      "id": "sha256:d5a3a1785299ab40918d465e54fedf8e3afeeedba76bb64b0cc74dbc20bda2c3",
+      "repo_digests": [
+        "jasonish/suricata@sha256:d5a3a1785299ab40918d465e54fedf8e3afeeedba76bb64b0cc74dbc20bda2c3"
+      ]
+    },
+    "prom/prometheus:v3.13.5": {
+      "id": "sha256:aafa9d694e6a883c02db516d9f6e5b84e14195f49a2a6456a4cca815edda72b9",
+      "repo_digests": [
+        "prom/prometheus@sha256:aafa9d694e6a883c02db516d9f6e5b84e14195f49a2a6456a4cca815edda72b9"
+      ]
+    },
+    "grafana/grafana:12.4.12": {
+      "id": "sha256:83be3e511ede559bee80e2215bb1987cb1246075461cb961beb515b0341e7aea",
+      "repo_digests": [
+        "grafana/grafana@sha256:83be3e511ede559bee80e2215bb1987cb1246075461cb961beb515b0341e7aea"
+      ]
+    }
+  },
+  "model": {
+    "name": "qwen3.5:2b",
+    "digest": "0689d44085e06d165161a8a9a1731344278cfb5aade63a3c3dbdb48ab54b130a"
+  },
+  "files": {
+    "configs/__pycache__/wan-http.cpython-314.pyc": "e021f9cb38b8ace7a923ae42bd687af331217e7bb9b28cf98d71d6e6421cc701",
+    "configs/dhcp/client.conf": "eb36c1239ae4a8bb10382eaf22dada06b8d0a05f8029142705b5711e61787ae5",
+    "configs/dhcp/dnsmasq.conf": "1c5a6915b2a5916d152eb10bf6968fc773c38344ba4731532bddf34de8f6d447",
+    "configs/dhcp/lease.sh": "0687144628490270d7ccb4c87c041ff485a67c19dfd0df993bc0276dee46fa12",
+    "configs/dhcp/server.conf": "797ba95dd04e367d993238783b353dfdc44aa4684caaad56d21830bbdcbd4080",
+    "configs/dns/dnsmasq.conf": "64f99b068757d19f05be1745d7a52338fd10379395877d564cff3794bf9d1b8e",
+    "configs/dns/server.conf": "f8a9adc29f9c3bbe4026d6468e75918bb744e10b3ecb27e70d8e4d057ff67927",
+    "configs/dns/start.sh": "30359a5d1fead99905d75509e2901a69f36abb9a03e276452314f4d34c36d397",
+    "configs/gateway/configure.sh": "ab02cb556778bc1c811986e492e342a4ba7df5f4b7abf29cce38d53a3509b2f0",
+    "configs/host.sh": "4d7f4e7f5e8f08df51702e6e9750919f6283b89fd0a7f194cab5a447b775239f",
+    "configs/nftables/apply.sh": "544bc6faed42c6e1a01e0d8842cdd562146ac0a405205e85e9a9c6b1ed73da9a",
+    "configs/nftables/condonet.nft": "6a0e07a74a8392cda04f279e64e1809953401b191f3faf423c15fe129e5bb8fd",
+    "configs/nginx/camera.html": "4092bac2e8f86ce5be13172e616ac363dae3bb5d0c76e503bf59a40075fb43dc",
+    "configs/nginx/nginx.conf": "e9b727d15ac49d122fa2dd6aea8c769a881a085511432d8415bae9236bf28e75",
+    "configs/nginx/portal.html": "80b732d4df216fa35e4d111f953dccc6867c07599e310d908fb059197d6ade5c",
+    "configs/nginx/server.conf": "7dbe1386cfc221a438427a031fb7f88bf00f43de8e750e0f1a7859ecc9c603c9",
+    "configs/ssh/server.conf": "8b38252fde2f69797f6d835e101d43bfc1a21600bbe5c67a523d8835ec7c5353",
+    "configs/ssh/sshd_config": "eac4ddba1267994fc2e59666c930d7948e47da7507eae9b714f9fc00f6ce494d",
+    "configs/ssh/start.sh": "fcf4b34964e2891d0bdcdcd18f5465b2747acfc50930c12cb9f44419fd3a52fd",
+    "configs/supervisor/start.sh": "5fdc98a93fbd25b95426b18a239502490999f9483f90d3b67e2526b1cbb15f50",
+    "configs/supervisor/supervisord.conf": "73de1bcd7b5f1a65259735a78a4e03f049a23cd91e08594dab4529cf6a3ca3af",
+    "configs/supervisor/wan-http.conf": "331c8b6c0876f260b977d2132807261bbb9432b7f24e3b059599f01e16b8254d",
+    "configs/switch/configure.sh": "d42712c44edc1ad00f25cf71fa9e62f4f42c036c2eea9c4d57c29969d1facb37",
+    "configs/wan-http.py": "408bdce937802623fcb1c5d5819c8206604b3ba9e45dc42361a12c08fb48fe8a",
+    "grafana/dashboard.json": "aac48b6a01cf2b6abed58e35ddca639c8e048a9cdad4c4de6e39d15883a01601",
+    "grafana/provisioning/dashboards/condonet.yml": "fc5c9a053525449c478b8eef870317167bde5a50ca7542394dc2903cfa4d616c",
+    "grafana/provisioning/datasources/prometheus.yml": "ed09ebac58f30638f76b913059b326f367e7852b07d6e8b0559cb3449714378b",
+    "images/lab-node/Dockerfile": "cd6ac833dce6d00a976b5ecf77f0ed13080fa33ec5bcfc207976598e201d973a",
+    "lab/condonet.clab.yml": "b53b3a7fc1b27e97a7e7acbaa986ad93956ec3080c95b5747a22980269a420e1",
+    "observability/compose.yml": "727ff4b1bbd7ed97a03891800bff9c07d86eb4c2153da7d0dbdd4c71a93a79a8",
+    "observability/prometheus.yml": "35f6f1e8e8b7854c8a95dde6c33768a030d10beab91ecd9998ed3a20b12f2914",
+    "requirements-evaluation.txt": "9c5451b5d3e014525523b5c889132c832f191feca9851fac2cb3f4b425815669",
+    "runbooks/catalog.json": "225148c78e3ca6e45e34f00133b4e3a5f695f28b106febc1682672daf04f7097",
+    "security/local.rules": "0bc253b54cde2fded2003896c07c0fda8decc46652cf95fe0560c78e85f588a5",
+    "security/sensor.sh": "c192813a47f0a2f8f358c7cab7c33803f41038eb058fdf0b93bfeba132e963d3",
+    "security/suricata.yaml": "f39002e139b558c3e8fc8a90def03fa4dc281d5a88bd03045aff50ba3fb79cd1",
+    "tests/policy-cases.yaml": "d58b4dbb1e4b183c35c521cbb573a19e5e5f77d71add37627aacdb986c91c5e4",
+    "tests/scenarios.yaml": "0227c97bf1d9b55d5b47b71bdc179c60ac8fab5be6651c7c5e44b4c65f5008ac"
+  }
+}

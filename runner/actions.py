@@ -19,6 +19,9 @@ class LabActions:
         self.execute = execute
 
     def command(self, argv, accepted=(0,)):
+        return self.command_result(argv, accepted).stdout
+
+    def command_result(self, argv, accepted):
         try:
             result = self.execute(argv, timeout=10, capture_output=True)
         except (OSError, subprocess.TimeoutExpired) as error:
@@ -26,7 +29,7 @@ class LabActions:
         if result.returncode not in accepted:
             diagnostic = (result.stderr or result.stdout).decode(errors="replace").strip()
             raise ActionFailed(f"Lab command failed ({result.returncode}): {diagnostic[:500]}")
-        return result.stdout
+        return result
 
     def run(self, plan, operation, accepted=(0,), approval_id=None):
         return self.command(self.policy.argv(plan, operation, approval_id), accepted)
@@ -48,8 +51,12 @@ class LabActions:
         if len(fields) < 2 or fields[0] != rule.process:
             raise ActionFailed("Supervisor did not identify the expected service")
         pid = re.search(r"\bpid (\d+)", status)
-        return {"process": fields[0], "status": fields[1], "pid": int(pid[1]) if pid else None,
-                "configuration_sha256": sha256(config).hexdigest()}
+        snapshot = {"process": fields[0], "status": fields[1], "pid": int(pid[1]) if pid else None,
+                    "configuration_sha256": sha256(config).hexdigest()}
+        if plan.runbook_id == "RB01":
+            snapshot["fixture"] = self.command_result(
+                self.policy.argv(plan, "fixture_present"), (0, 1)).returncode == 0
+        return snapshot
 
     def quarantine_snapshot(self, plan):
         address = str(plan.parameters.source_ipv4)
@@ -103,6 +110,8 @@ class LabActions:
         if ticket.plan.runbook_id == "RB03":
             self.run(ticket.plan, "add", approval_id=ticket.id)
         else:
+            if before.get("fixture"):
+                self.run(ticket.plan, "fixture_clear")
             self.run(ticket.plan, "start" if before["status"] == "STOPPED" else "restart")
 
     def rollback(self, ticket, before):
@@ -122,10 +131,15 @@ class LabActions:
         if (current["configuration_sha256"] != before["configuration_sha256"]
                 or current["status"] not in {"STOPPED", "RUNNING"}):
             raise ActionFailed("Original config or restorable process state could not be confirmed")
+        fixture_changed = current.get("fixture") != before.get("fixture")
+        if fixture_changed:
+            self.run(plan, "fixture_restore" if before["fixture"] else "fixture_clear")
         if current["status"] != before["status"]:
             self.run(plan, "start" if before["status"] == "RUNNING" else "stop")
+        elif fixture_changed and before["status"] == "RUNNING":
+            self.run(plan, "restart")
         after = self.service_snapshot(plan)
-        if any(after[key] != before[key] for key in ("status", "configuration_sha256")):
+        if any(after.get(key) != before.get(key) for key in ("status", "configuration_sha256", "fixture")):
             raise ActionFailed("Rollback did not restore the snapshot")
         return after
 
@@ -156,9 +170,16 @@ class Verifier:
         with ThreadPoolExecutor(max_workers=len(conditions)) as workers:
             observations = [result.record() for result in workers.map(
                 self.probes.run, (key for key, _ in conditions))]
-        ok = all(observed["status"] == expected
-                 for observed, (_, expected) in zip(observations, conditions, strict=True))
+        ok = all(self.matches(observed, key, expected)
+                 for observed, (key, expected) in zip(observations, conditions, strict=True))
         return ok, observations
+
+    def matches(self, observed, key, expected):
+        probe = self.probes.probes[key]
+        return (observed["probe_id"], observed["source_node"], observed["target"], observed["status"],
+                observed["evidence"].get("container")) == (
+                    key, probe.source_node, probe.target, expected,
+                    container_name(self.probes.lab, probe.source_node))
 
     def repeat(self, conditions):
         observations = []
@@ -185,9 +206,9 @@ class Verifier:
         if plan.runbook_id == "RB03":
             return ((f"{source}-portal-http", "failed"),
                     *((probe, "healthy") for probe in self.canaries(plan)))
-        targets = (f"{source}-portal-http",)
+        targets = (f"{source}-portal-http", f"{source}-dns-udp")
         if plan.runbook_id == "RB01":
-            targets += (f"{source}-dns-udp", f"{source}-dns-tcp", f"{source}-portal-name-http")
+            targets += (f"{source}-dns-tcp", f"{source}-portal-name-http")
         return tuple((probe, "healthy") for probe in (*targets, *self.canaries(plan)))
 
     def postcheck(self, plan):
@@ -229,6 +250,7 @@ class ActionRunner:
             started = True
             self.actions.apply(ticket, before)
             applied_at = monotonic()
+            self.store.record_progress(ticket, "applied", {})
             if plan.runbook_id != "RB03":
                 result["after"] = self.actions.snapshot(plan)
             ok, result["postcheck"] = self.verifier.postcheck(plan)
@@ -239,6 +261,7 @@ class ActionRunner:
                     raise ActionFailed("Postcheck could not confirm isolated source and working canaries")
                 self.store.record_progress(ticket, "isolation_verified", result)
                 result["expiry"] = self.actions.wait_for_expiry(plan, applied_at + QUARANTINE_TTL_SECONDS + 8)
+                result["ttl_seconds"] = monotonic() - applied_at
                 recovered, result["expiry_probes"] = self.verifier.restored_source(plan)
                 if not recovered:
                     raise ActionFailed("Source or canaries did not recover after expiry")
@@ -254,9 +277,9 @@ class ActionRunner:
                     result["rollback_status"] = "verified"
                     healthy, result["rollback_probes"] = self.verifier.rollback_check(plan)
                     result["baseline_healthy_after_rollback"] = healthy
-                    healthy_probes = {row["probe_id"] for row in result["rollback_probes"]
-                                      if row["status"] == "healthy"}
-                    if not set(self.verifier.canaries(plan)) <= healthy_probes:
+                    canaries = self.verifier.canaries(plan)
+                    if not all(any(self.verifier.matches(row, key, "healthy")
+                                   for row in result["rollback_probes"]) for key in canaries):
                         raise ActionFailed("Canaries failed after rollback")
                 except (ValueError, KeyError, IndexError, TypeError, StopIteration) as rollback_error:
                     result["rollback_status"] = "failed"

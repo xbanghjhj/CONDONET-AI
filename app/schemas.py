@@ -1,7 +1,9 @@
 import json
+from datetime import datetime, timezone
 from functools import cache
 from hashlib import sha256
 from ipaddress import IPv4Address
+from time import monotonic_ns
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -107,6 +109,8 @@ class AgentState(Contract):
     pending: ProbeRequest | None = None
     decision: Decision | None = None
     error: str | None = None
+    completed_at: str | None = None
+    completed_monotonic_ns: int | None = None
 
     def diagnosis(self):
         if self.phase not in {"collect", "investigate"}:
@@ -124,7 +128,11 @@ class AgentState(Contract):
     def finish(self, decision):
         if self.phase != "diagnose" or decision.status == "investigate":
             raise ValueError("Only a terminal decision can finish diagnosis")
-        return self.model_copy(update={"phase": decision.status, "decision": decision})
+        return self.complete(phase=decision.status, decision=decision)
 
     def need_human(self, reason):
-        return self.model_copy(update={"phase": "need_human", "pending": None, "error": reason})
+        return self.complete(phase="need_human", pending=None, error=reason)
+
+    def complete(self, **fields):
+        return self.model_copy(update={**fields, "completed_monotonic_ns": monotonic_ns(),
+                                       "completed_at": datetime.now(timezone.utc).isoformat(timespec="milliseconds")})

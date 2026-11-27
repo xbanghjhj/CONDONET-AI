@@ -6,6 +6,7 @@ from pathlib import Path
 
 APPROVAL_TTL_SECONDS = 300
 QUARANTINE_TTL_SECONDS = 120
+DNS_FIXTURE = "/run/condonet-dns-fixture"
 CONFIG_DIRECTORY = Path(__file__).resolve().parents[1] / "configs"
 
 
@@ -39,7 +40,7 @@ RUNBOOKS = {
         "web_down", "nginx", "nginx/nginx.conf", "/condonet/nginx.conf",
         "Confirm DNS works, the portal fails by IP and the mounted Nginx config passes its syntax check.",
         "Restart only the portal Nginx process on svc. In-flight portal requests may fail.",
-        "Check the HTTP status and portal body, and two unaffected VLAN canaries.",
+        "Check DNS, HTTP status and portal body, and two unaffected VLAN canaries.",
         "Restore the previous Nginx process state and confirm the configuration digest and canaries.",
     ),
     "RB03": Runbook(

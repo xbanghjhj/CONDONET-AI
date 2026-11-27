@@ -32,3 +32,9 @@ models/
 *.vdi
 *.qcow2
 *.iso
+
+# Local Day 9 and Day 10 logs, state and media
+/evidence/day09/
+/evidence/day10/
+/evidence/.condonet-day*.lock
+/video/

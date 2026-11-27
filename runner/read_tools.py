@@ -129,7 +129,7 @@ class ReadOnlyRunner:
                         "--connect-timeout", "2", "--max-time", "4", "--max-filesize", "8192",
                         "--write-out", "\n%{http_code} %{time_total}", url)
             case "interface":
-                return ("ip", "-j", "-4", "address", "show", "dev", probe.address)
+                return ("ip", "-j", "address", "show", "dev", probe.address)
             case "route":
                 return ("ip", "-j", "-4", "route", "get", probe.address)
         raise ValueError(f"Unsupported probe tool: {probe.tool}")
@@ -243,7 +243,8 @@ class ReadOnlyRunner:
             return "missing", "runner_error", {}, {}
         row = json.loads(result.stdout)[0]
         if probe.tool == "interface":
-            addresses = [f"{entry['local']}/{entry['prefixlen']}" for entry in row["addr_info"]]
+            addresses = [f"{entry['local']}/{entry['prefixlen']}" for entry in row["addr_info"]
+                         if entry["family"] == "inet"]
             details = {"interface": row["ifname"], "addresses": addresses,
                        "up": "UP" in row.get("flags", ()), "operstate": row.get("operstate")}
         else:

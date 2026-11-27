@@ -111,6 +111,27 @@ def expected_policy_evidence(item):
             and item.evidence["counter_delta"] > 0)
 
 
+def lab_network_finding(incident, item):
+    if incident.origin != "lab_observation" or item.status != "failed":
+        return None
+    details = item.evidence
+    if (item.probe, item.target, item.source_node) == ("vlan", "sw:eth1", "resident"):
+        if (details.get("trunk_vlans") == [10, 30, 40, 50] and details.get("resident_access_pvid") == 20
+                and details.get("resident_mac_learned") is True
+                and details.get("resident_gateway") == "failed" and details.get("guest_gateway") == "healthy"):
+            return "gateway_unreachable"
+    if (item.probe, item.target, item.source_node) == ("dhcp", "gw:67", "guest"):
+        if (details.get("fresh_guest_addresses") == [] and details.get("guest_access_pvid") == 30
+                and details.get("dhcp_server_status") == "STOPPED" and details.get("resident_lease_retained") is True):
+            return "dhcp_failure"
+    if (item.probe, item.target, item.source_node) == ("ping_sample", HOST_BY_NAME["resident"].gateway, "resident"):
+        sent, received = (item.measurements.get(field) for field in ("transmitted", "received"))
+        if (type(sent) is int and type(received) is int and 0 < received < sent and sent >= 50
+                and details.get("guest_canary") == "healthy"):
+            return "packet_loss"
+    return None
+
+
 def grounded_findings(incident, observations):
     scoped = [item for item in observations if item.source_node == incident.source_node]
     if incident.origin == "ids_test":
@@ -121,6 +142,9 @@ def grounded_findings(incident, observations):
     policy = [item.id for item in scoped if expected_policy_evidence(item)]
     if policy:
         return {"expected_deny": policy}
+    for item in scoped:
+        if hypothesis := lab_network_finding(incident, item):
+            return {hypothesis: [item.id]}
 
     observations_by_kind = {}
     policy_tools = known_probes()
